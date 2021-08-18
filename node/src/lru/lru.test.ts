@@ -1,10 +1,10 @@
 import test from "ava";
 import { List, ListNode, Entry } from "./list";
-import { Cache } from "./lru";
+import { LruCache } from "./lru";
 import sizeof from "object-sizeof";
 
 test("test cache get", (t) => {
-  const lru = new Cache(0);
+  const lru = new LruCache(0);
   lru.Add("key1", "1234");
 
   const value1 = lru.Get("key1").value;
@@ -21,7 +21,7 @@ test("test cache Removeoldest", (t) => {
   const [v1, v2, v3] = ["value1", "value2", "v3"];
 
   const cap = sizeof(new Entry(k1, v1)) + sizeof(new Entry(k2, v2));
-  const lru = new Cache(cap);
+  const lru = new LruCache(cap);
   lru.Add(k1, v1);
   lru.Add(k2, v2);
   lru.Add(k3, v3);
@@ -42,7 +42,7 @@ test("test cache onEvicted", (t) => {
   const [v1, v2, v3] = ["value1", "value2", "v3"];
 
   const cap = sizeof(new Entry(k1, v1)) + sizeof(new Entry(k2, v2));
-  const lru = new Cache(cap, callback);
+  const lru = new LruCache(cap, callback);
   lru.Add(k1, v1);
   lru.Add(k2, v2);
   lru.Add(k3, v3);
@@ -59,7 +59,7 @@ test("test cache add", (t) => {
     sizeof(new Entry(k1, v1)) +
     sizeof(new Entry(k2, v2)) +
     sizeof(new Entry(k3, v3));
-  const lru = new Cache(0);
+  const lru = new LruCache(0);
   lru.Add(k1, v1);
   lru.Add(k2, v2);
   lru.Add(k3, v3);

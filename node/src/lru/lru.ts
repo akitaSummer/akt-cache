@@ -1,7 +1,7 @@
 import { List, ListNode, Entry } from "./list";
 import sizeof from "object-sizeof";
 
-export class Cache {
+export class LruCache {
   maxBytes: number; // 最大内存
   nbytes: number; // 已使用的内存
   ll: List; // 双向链表
