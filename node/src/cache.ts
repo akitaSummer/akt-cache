@@ -1,4 +1,5 @@
 import AsyncLock from "async-lock";
+import clone from "rfdc";
 import { LruCache } from "./lru/lru";
 
 const CACHENAMEMAP: { [propsName: string]: Cache } = {};
@@ -24,7 +25,7 @@ export class Cache {
         if (!this.lru) {
           this.lru = new LruCache(this.cacheBytes);
         }
-        this.lru.Add(key, value);
+        this.lru.Add(key, clone({ proto: true })(value));
       });
     } catch (e) {
       console.log(e.toString());
@@ -38,7 +39,7 @@ export class Cache {
           return null;
         }
 
-        return this.lru.Get(key);
+        return clone({ proto: true })(this.lru.Get(key));
       });
       return result;
     } catch (e) {

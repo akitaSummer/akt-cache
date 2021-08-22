@@ -1,5 +1,6 @@
 import AsyncLock from "async-lock";
 import { Cache, newCache } from "./cache";
+import { Entry } from "./lru/list";
 
 const AKTCACHENAMEMAP: { [propsName: string]: Group } = {};
 
@@ -21,23 +22,24 @@ class Group {
     AKTCACHENAMEMAP[name] = this;
   }
 
-  async get(key: string) {
+  async get(key: string): Promise<any | null> {
     if (!key) {
       return null;
     }
     try {
       const v = await this.mainCache.get(key);
       if (v !== null) {
-        return v;
+        return v.value;
       }
-      return await this.load(key);
+      const loadv = await this.load(key);
+      return loadv ? loadv.value : null;
     } catch (e) {
       console.log(e.toString());
       return null;
     }
   }
 
-  async load(key: string) {
+  async load(key: string): Promise<Entry | null> {
     try {
       return await this.getLocall(key);
     } catch (e) {
@@ -46,7 +48,7 @@ class Group {
     }
   }
 
-  async getLocall(key: string) {
+  async getLocall(key: string): Promise<Entry | null> {
     try {
       const value = await this.getter.Get(key);
 
@@ -56,7 +58,7 @@ class Group {
 
       await this.populateCache(key, value);
 
-      return value;
+      return new Entry(key, value);
     } catch (e) {
       console.log(e.toString());
       return null;
@@ -109,6 +111,6 @@ export const getGroup = async (name: string) => {
     return group;
   } catch (e) {
     console.log(e.toString());
-    return e;
+    return null;
   }
 };
