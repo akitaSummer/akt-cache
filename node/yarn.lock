@@ -117,6 +117,11 @@
   resolved "https://registry.nlark.com/@types/node/download/@types/node-15.14.7.tgz?cache=0&sync_timestamp=1628800447602&other_urls=https%3A%2F%2Fregistry.nlark.com%2F%40types%2Fnode%2Fdownload%2F%40types%2Fnode-15.14.7.tgz#29fea9a5b14e2b75c19028e1c7a32edd1e89fe92"
   integrity sha1-Kf6ppbFOK3XBkCjhx6Mu3R6J/pI=
 
+"@types/node@^16.4.3":
+  version "16.7.4"
+  resolved "https://registry.nlark.com/@types/node/download/@types/node-16.7.4.tgz?cache=0&sync_timestamp=1630089309604&other_urls=https%3A%2F%2Fregistry.nlark.com%2F%40types%2Fnode%2Fdownload%2F%40types%2Fnode-16.7.4.tgz#68a9384694af63ceab8848e95d76d9a3519e84b6"
+  integrity sha1-aKk4RpSvY86riEjpXXbZo1GehLY=
+
 "@types/normalize-package-data@^2.4.0":
   version "2.4.1"
   resolved "https://registry.nlark.com/@types/normalize-package-data/download/@types/normalize-package-data-2.4.1.tgz#d3357479a0fdfdd5907fe67e17e0a85c906e1301"
@@ -464,6 +469,11 @@ camelcase@^6.2.0:
   version "6.2.0"
   resolved "https://registry.npm.taobao.org/camelcase/download/camelcase-6.2.0.tgz?cache=0&sync_timestamp=1603921799543&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fcamelcase%2Fdownload%2Fcamelcase-6.2.0.tgz#924af881c9d525ac9d87f40d964e5cea982a1809"
   integrity sha1-kkr4gcnVJaydh/QNlk5c6pgqGAk=
+
+cargo-cp-artifact@^0.1:
+  version "0.1.5"
+  resolved "https://registry.nlark.com/cargo-cp-artifact/download/cargo-cp-artifact-0.1.5.tgz#2c35f7d658f22acfe9b1fa2774344d9a389efd14"
+  integrity sha1-LDX31ljyKs/psfondDRNmjie/RQ=
 
 chalk@^2.0.0:
   version "2.4.2"
@@ -1626,6 +1636,14 @@ negotiator@0.6.2:
   version "0.6.2"
   resolved "https://registry.npm.taobao.org/negotiator/download/negotiator-0.6.2.tgz#feacf7ccf525a77ae9634436a64883ffeca346fb"
   integrity sha1-/qz3zPUlp3rpY0Q2pkiD/+yjRvs=
+
+node-crc@^2.0.11:
+  version "2.0.11"
+  resolved "https://registry.nlark.com/node-crc/download/node-crc-2.0.11.tgz#d84c918921a0158028fa40cbba696485e2cd2597"
+  integrity sha1-2EyRiSGgFYAo+kDLumlkheLNJZc=
+  dependencies:
+    "@types/node" "^16.4.3"
+    cargo-cp-artifact "^0.1"
 
 nodemon@^2.0.7:
   version "2.0.12"
