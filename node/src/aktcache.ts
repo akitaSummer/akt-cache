@@ -1,6 +1,7 @@
 import AsyncLock from "async-lock";
 import { Cache, newCache } from "./cache";
 import { Entry } from "./lru/list";
+import { PeerGetter, PeerPicker } from "./peers";
 
 const AKTCACHENAMEMAP: { [propsName: string]: Group } = {};
 
@@ -14,12 +15,20 @@ class Group {
   name: string;
   getter: Getter;
   mainCache: Cache;
+  peers: PeerPicker;
   constructor(name: string, getters: Getter, mainCache: Cache) {
     name = `__AKTCACHE__${name}`;
     this.name = name;
     this.getter = getters;
     this.mainCache = mainCache;
     AKTCACHENAMEMAP[name] = this;
+  }
+
+  registerPeers(peers: PeerPicker) {
+    if (!!this.peers) {
+      throw new Error("egisterPeerPicker called more than once");
+    }
+    this.peers = peers;
   }
 
   async get(key: string): Promise<any | null> {
@@ -41,11 +50,28 @@ class Group {
 
   async load(key: string): Promise<Entry | null> {
     try {
+      if (!this.peers) {
+        const peer = await this.peers.pickPeer(key);
+        if (peer) {
+          const value: Entry | null = await this.getFromPeer(peer, key);
+          if (value) {
+            return value;
+          }
+        }
+      }
       return await this.getLocall(key);
     } catch (e) {
       console.log(e.toString());
       return null;
     }
+  }
+
+  async getFromPeer(peer: PeerGetter, key: string) {
+    const value = await peer.get(this.name, key);
+    if (!value) {
+      return null;
+    }
+    return new Entry(key, value);
   }
 
   async getLocall(key: string): Promise<Entry | null> {

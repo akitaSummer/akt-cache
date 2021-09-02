@@ -1,13 +1,22 @@
 import express, { Express, Request, Response, NextFunction } from "express";
+import axios from "axios";
+import AsyncLock from "async-lock";
+import { ConsistentHashMap } from "./consistenthash/consistenthash";
 import { getGroup } from "./aktcache";
+import { PeerGetter, PeerPicker } from "./peers";
 
 const defaultBasePath = "/_aktcache/";
+const defaultReplicas = 50;
 
-export class HTTP {
+const HTTPLOCK = new AsyncLock();
+
+export class HTTP implements PeerPicker {
   self: string; // 记录自己的ip
   port: number; // 记录自己的ip/端口
   basePath: string; // 节点间通讯地址的前缀
   server: Express;
+  peers: ConsistentHashMap;
+  httpGetters: Map<string, HttpGetter>;
 
   constructor(self: string, port: number, callback?: () => void) {
     this.self = self;
@@ -75,5 +84,63 @@ export class HTTP {
       console.log(`server run in ${this.self + ":" + this.port}`);
       callback && callback();
     });
+  }
+
+  async set(...peers: string[]) {
+    try {
+      await HTTPLOCK.acquire(`___HTTP___${this.self}___`, () => {
+        this.peers = new ConsistentHashMap(defaultReplicas, null);
+        this.peers.Add(...peers);
+        this.httpGetters = new Map<string, HttpGetter>();
+        peers.forEach((peer) => {
+          this.httpGetters.set(peer, new HttpGetter(peer + this.basePath));
+        });
+      });
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
+  }
+
+  async pickPeer(key: string) {
+    try {
+      const result: HttpGetter | null = await HTTPLOCK.acquire(
+        `___HTTP___${this.self}___`,
+        async () => {
+          // 获取真实结点
+          const peer = this.peers.Get(key);
+          if (peer !== "" && peer !== this.self) {
+            return this.httpGetters[peer];
+          }
+          return null;
+        }
+      );
+      return result;
+    } catch (err) {
+      console.log(err);
+      throw err;
+    }
+  }
+}
+
+class HttpGetter implements PeerGetter {
+  baseUrl: string;
+  constructor(baseUrl: string) {
+    this.baseUrl = baseUrl;
+  }
+
+  async get(group: string, key: string) {
+    const url = `${this.baseUrl}${group}/${key}`;
+    console.log(`GET: ${url}`);
+    const res = await axios({
+      url,
+      method: "GET",
+    });
+
+    if (res.status !== 200) {
+      return null;
+    }
+
+    return res.data.data;
   }
 }
