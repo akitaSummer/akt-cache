@@ -2,6 +2,7 @@ import AsyncLock from "async-lock";
 import { Cache, newCache } from "./cache";
 import { Entry } from "./lru/list";
 import { PeerGetter, PeerPicker } from "./peers";
+import { SingleFlight } from "./singleflight/singleflight";
 
 const AKTCACHENAMEMAP: { [propsName: string]: Group } = {};
 
@@ -11,16 +12,18 @@ export interface Getter {
   Get(key: string): any | Promise<any> | null;
 }
 
-class Group {
+export class Group {
   name: string;
   getter: Getter;
   mainCache: Cache;
   peers: PeerPicker;
+  loader: SingleFlight;
   constructor(name: string, getters: Getter, mainCache: Cache) {
     name = `__AKTCACHE__${name}`;
     this.name = name;
     this.getter = getters;
     this.mainCache = mainCache;
+    this.loader = new SingleFlight(name);
     AKTCACHENAMEMAP[name] = this;
   }
 
@@ -50,16 +53,18 @@ class Group {
 
   async load(key: string): Promise<Entry | null> {
     try {
-      if (!this.peers) {
-        const peer = await this.peers.pickPeer(key);
-        if (peer) {
-          const value: Entry | null = await this.getFromPeer(peer, key);
-          if (value) {
-            return value;
+      return await this.loader.Do(key, async () => {
+        if (!this.peers) {
+          const peer = await this.peers.pickPeer(key);
+          if (peer) {
+            const value: Entry | null = await this.getFromPeer(peer, key);
+            if (value) {
+              return value;
+            }
           }
         }
-      }
-      return await this.getLocall(key);
+        return await this.getLocall(key);
+      });
     } catch (e) {
       console.log(e.toString());
       return null;

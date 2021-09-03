@@ -1,6 +1,7 @@
 package aktcache
 
 import (
+	"AktCache/singleflight"
 	"fmt"
 	"sync"
 )
@@ -20,6 +21,7 @@ type Group struct {
 	getter    Getter // 缓存未命中时的回调
 	mainCache cache  // 并发缓存
 	peers     PeerPicker
+	loader    *singleflight.Group
 }
 
 var (
@@ -41,6 +43,7 @@ func NewGroup(name string, cacheBytes int64, getter Getter) *Group {
 		mainCache: cache{
 			cacheBytes: cacheBytes,
 		},
+		loader: &singleflight.Group{},
 	}
 
 	groups[name] = g
@@ -79,17 +82,23 @@ func (g *Group) Get(key string) (ByteView, error) {
 //
 func (g *Group) load(key string) (value ByteView, err error) {
 
-	if g.peers != nil {
-		if peer, ok := g.peers.PickPeer(key); ok {
-			if value, err := g.getFromPeer(peer, key); err == nil {
-				return value, nil
+	result, err := g.loader.Do(key, func() (interface{}, error) { // 包裹后只调用一次
+		if g.peers != nil {
+			if peer, ok := g.peers.PickPeer(key); ok {
+				if value, err := g.getFromPeer(peer, key); err == nil {
+					return value, nil
+				}
+				fmt.Println("[GeeCache] Failed to get from peer", err)
 			}
-			fmt.Println("[GeeCache] Failed to get from peer", err)
 		}
-	}
 
-	// 单机时调用本地Get回调函数
-	return g.getLocally(key)
+		// 单机时调用本地Get回调函数
+		return g.getLocally(key)
+	})
+	if err == nil {
+		return result.(ByteView), nil
+	}
+	return
 }
 
 func (g *Group) getFromPeer(peer PeerGetter, key string) (ByteView, error) {
